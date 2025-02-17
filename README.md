@@ -19,7 +19,7 @@ Whether you're feeling happy, sad, or just need someone to talk to, **Lumi is he
 ---
 
 ## 🚀 Live Demo
-🔗 **Try Lumi Now →** [Lumi Chatbot on Hugging Face](https://Yuki-Chen-emochatbot.hf.space/dialogflow)  
+🔗 **Try Lumi Now →** [Lumi Chatbot on Render](https://lumi-chatbot.onrender.com/) 
 
 ---
 
