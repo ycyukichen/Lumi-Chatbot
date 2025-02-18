@@ -36,6 +36,17 @@ except Exception as e:
     st.error(f"MongoDB connection error: {str(e)}")
     client, db, collection = None, None, None
 
+
+def get_image_base64(image_path):
+    """Encodes an image file to Base64 format for embedding in HTML."""
+    try:
+        with open(image_path, "rb") as img_file:
+            base64_str = base64.b64encode(img_file.read()).decode("utf-8")
+        return base64_str
+    except FileNotFoundError:
+        st.error(f"Error: Image file '{image_path}' not found.")
+        return ""
+    
 # Streamlit UI Configuration
 st.set_page_config(
     page_title="Lumi - I'm here for you", 
@@ -130,7 +141,6 @@ def save_message_to_mongo(role, text):
 
 # Optimize API calls with caching and error handling
 @lru_cache(maxsize=100)
-
 def get_emotion(text):
     try:
         payload = {"queryResult": {"queryText": text}, "session": "test_session_123"}
