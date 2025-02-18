@@ -89,6 +89,7 @@ def get_custom_css(theme=None):
     """
 
 # Initialize Theme Setting in Session State
+if "theme" not in st.session_state:
     st.session_state["theme"] = "light"
 
 # Apply CSS with system preference + manual override
