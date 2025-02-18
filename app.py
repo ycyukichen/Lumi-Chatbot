@@ -43,96 +43,60 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Optimize image loading with caching
-@lru_cache(maxsize=1)
-def get_image_base64(image_path):
-    if os.path.isfile(image_path):
-        with open(image_path, "rb") as img_file:
-            return base64.b64encode(img_file.read()).decode('utf-8')
-    return ""
-
-# Initialize Theme in Session State (Default to Light Mode)
-if "theme" not in st.session_state:
-    st.session_state.theme = "light"
-
-# Cache the CSS to avoid recomputation
-@lru_cache(maxsize=1)
-def get_custom_css(theme="light"):
-    if theme == "dark":
-        background_color = "#121212"
-        chat_background = "#1e1e1e"
-        user_bubble = "#00a884"
-        lumi_bubble = "#252525"
-        text_color = "#ffffff"
-        timestamp_color = "#aaaaaa"
-        input_background = "#252525"
-        border_color = "#444"
-    else:
-        background_color = "#f5f8fa"
-        chat_background = "#ffffff"
-        user_bubble = "#dcf8c6"
-        lumi_bubble = "#f5f5f5"
-        text_color = "#000000"
-        timestamp_color = "#666666"
-        input_background = "#ffffff"
-        border_color = "#e6e6e6"
-
+# Cache image loading to optimize performance
+@st.cache_data
+def get_custom_css(theme=None):
+    """Returns CSS that adapts to system dark mode settings and manual selection."""
     return f"""
     <style>
-        .main {{
-            background-color: {background_color};
-            color: {text_color};
+        /* System Dark Mode Detection (Default) */
+        @media (prefers-color-scheme: dark) {{
+            .main {{ background-color: #121212; color: #ffffff; }}
+            .chat-title {{ color: #ffffff; }}
+            .chat-container {{ background-color: #1e1e1e; }}
+            .user-bubble {{ background-color: #00a884; color: #ffffff; }}
+            .lumi-bubble {{ background-color: #252525; color: #ffffff; border: 1px solid #444; }}
         }}
-        .chat-title {{
-            text-align: center;
-            padding-bottom: 10px;
-            color: {text_color};
+        
+        @media (prefers-color-scheme: light) {{
+            .main {{ background-color: #f5f8fa; color: #000000; }}
+            .chat-title {{ color: #000000; }}
+            .chat-container {{ background-color: #ffffff; }}
+            .user-bubble {{ background-color: #dcf8c6; color: #000000; }}
+            .lumi-bubble {{ background-color: #f5f5f5; color: #000000; border: 1px solid #e6e6e6; }}
         }}
-        .chat-container {{
-            max-width: 600px;
-            margin: auto;
-            background-color: {chat_background};
-            border-radius: 10px;
-            padding: 5px;
-            margin-bottom: 50px;
-        }}
-        .avatar-img {{
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            object-fit: cover;
-            background-color: #fff;
-            padding: 3px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }}
-        .user-bubble, .lumi-bubble {{
-            padding: 12px 16px;
-            border-radius: 18px;
-            display: inline-block;
-            word-wrap: break-word;
-        }}
-        .user-bubble {{
-            background-color: {user_bubble};
-            color: {text_color};
-        }}
-        .lumi-bubble {{
-            background-color: {lumi_bubble};
-            color: {text_color};
-            border: 1px solid {border_color};
-        }}
+        
+        /* Manual Override - Dark Mode */
+        {"""
+        .main { background-color: #121212 !important; color: #ffffff !important; }
+        .chat-title { color: #ffffff !important; }
+        .chat-container { background-color: #1e1e1e !important; }
+        .user-bubble { background-color: #00a884 !important; color: #ffffff !important; }
+        .lumi-bubble { background-color: #252525 !important; color: #ffffff !important; border: 1px solid #444 !important; }
+        """ if theme == "dark" else ""}
+
+        /* Manual Override - Light Mode */
+        {"""
+        .main { background-color: #f5f8fa !important; color: #000000 !important; }
+        .chat-title { color: #000000 !important; }
+        .chat-container { background-color: #ffffff !important; }
+        .user-bubble { background-color: #dcf8c6 !important; color: #000000 !important; }
+        .lumi-bubble { background-color: #f5f5f5 !important; color: #000000 !important; border: 1px solid #e6e6e6 !important; }
+        """ if theme == "light" else ""}
     </style>
     """
 
-# Apply Cached CSS
+# Apply CSS with system preference + manual override
 st.markdown(get_custom_css(st.session_state.theme), unsafe_allow_html=True)
 
-# Theme Toggle Button
+# Theme Toggle Button for Manual Override
 col1, col2 = st.columns([0.8, 0.2])
 with col2:
-    if st.button("🌙 Dark Mode" if st.session_state.theme == "light" else "☀️ Light Mode"):
-        st.session_state.theme = "dark" if st.session_state.theme == "light" else "light"
-
-
+    if st.button("🌙 Dark Mode" if st.session_state.theme != "dark" else "☀️ Light Mode"):
+        # Toggle between light and dark mode manually
+        st.session_state.theme = "dark" if st.session_state.theme != "dark" else "light"
+        st.experimental_rerun()
+        
 # Check if logo exists
 logo_path = "Lumi.webp"
 logo_exists = os.path.isfile(logo_path)
