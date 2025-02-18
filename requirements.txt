@@ -1,2 +1,8 @@
 streamlit
 requests
+pandas
+datetime
+time
+os
+Pillow
+base64
