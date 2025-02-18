@@ -2,3 +2,6 @@ streamlit
 requests
 pandas
 Pillow
+pymongo
+python-dotenv
+protobuf

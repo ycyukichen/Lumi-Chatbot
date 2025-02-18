@@ -6,9 +6,23 @@ import time
 import os
 from PIL import Image
 import base64
+import pymongo
+from dotenv import load_dotenv
 
 # API URL
 API_URL = "https://Yuki-Chen-emochatbot.hf.space/dialogflow"
+
+# Load environment variables
+load_dotenv()
+
+MONGO_URI = os.getenv("MONGO_URI")
+DB_NAME = "lumi_chatbot"
+COLLECTION_NAME = "chat_history"
+
+# Connect to MongoDB
+client = pymongo.MongoClient(MONGO_URI) if MONGO_URI else None
+db = client[DB_NAME] if client else None
+collection = db[COLLECTION_NAME] if db else None
 
 # Streamlit UI Configuration
 st.set_page_config(
@@ -140,6 +154,16 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
+    
+# Function to save a message to MongoDB
+def save_message_to_mongo(role, text):
+    if collection:
+        message = {
+            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "role": role,
+            "text": text
+        }
+        collection.insert_one(message)
 
 # Function to Call FastAPI
 def get_emotion(text):
