@@ -241,7 +241,7 @@ def clean_text(text):
 
 def process_input():
     if st.session_state.user_input and not st.session_state.submitted:
-        user_text = clean_text(st.session_state.user_input)
+        user_text = clean_text(st.session_state.user_input).lower().strip()
         user_timezone = get_user_timezone()  # Get user's timezone
         local_tz = pytz.timezone(user_timezone)
 
@@ -277,6 +277,11 @@ def process_input():
         farewells = {
             "bye", "goodbye", "see you", "take care", "later", "farewell",
             "see you soon", "talk to you later", "peace", "so long"
+        }
+
+        casual_prompts = {
+            "what about you", "you tell", "tell me", "your turn", "you go",
+            "what do you think", "what would you say"
         }
 
         # Check for greeting messages
@@ -316,6 +321,17 @@ def process_input():
                 "Good vibes only! 🌟 Keep up the positivity.",
                 "Amazing! What's been making you smile today?",
                 "Glad to hear you're doing well! Anything exciting happening?"
+            ])
+
+        # Handle casual prompts (e.g., "you tell", "your turn")
+        elif user_text in casual_prompts:
+            response = random.choice([
+                "Hmm, I’d say I’m feeling... well, as great as a bot can be! 😊",
+                "You know, I’m just here to make your day better! Tell me something fun.",
+                "Good question! If I had feelings, I’d say I’m feeling pretty happy to chat with you!",
+                "My turn? Well, I think you’re awesome! Now, tell me more about you. 😊",
+                "I’d say… I’m here, ready to listen! What’s on your mind?",
+                "I’d love to answer, but I’m more interested in hearing about you!"
             ])
 
         # Check for farewell messages
