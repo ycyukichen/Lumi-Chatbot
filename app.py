@@ -275,7 +275,9 @@ def process_input():
             "hello", "hi", "hey", "good morning", "good afternoon", "good evening",
             "what is up", "howdy", "hiya", "yo", "greetings", "sup", "morning",
             "evening", "good day", "how do you do", "how are you", "how are you doing",
-            "how is everything", "how is it going", "how have you been", "what is new"
+            "how is everything", "how is it going", "how have you been", "what is new",
+            "hi, how do you do", "hi, how are you", "hi, how are you doing",
+            "hi, how is everything", "hi, how is it going", "hi, how have you been", "hi, what is new",
         }
 
         user_feeling_questions = {
