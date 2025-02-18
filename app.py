@@ -47,6 +47,22 @@ st.set_page_config(
 @st.cache_data
 def get_custom_css(theme=None):
     """Returns CSS that adapts to system dark mode settings and manual selection."""
+    dark_mode_css = """
+    .main { background-color: #121212 !important; color: #ffffff !important; }
+    .chat-title { color: #ffffff !important; }
+    .chat-container { background-color: #1e1e1e !important; }
+    .user-bubble { background-color: #00a884 !important; color: #ffffff !important; }
+    .lumi-bubble { background-color: #252525 !important; color: #ffffff !important; border: 1px solid #444 !important; }
+    """
+
+    light_mode_css = """
+    .main { background-color: #f5f8fa !important; color: #000000 !important; }
+    .chat-title { color: #000000 !important; }
+    .chat-container { background-color: #ffffff !important; }
+    .user-bubble { background-color: #dcf8c6 !important; color: #000000 !important; }
+    .lumi-bubble { background-color: #f5f5f5 !important; color: #000000 !important; border: 1px solid #e6e6e6 !important; }
+    """
+
     return f"""
     <style>
         /* System Dark Mode Detection (Default) */
@@ -65,24 +81,10 @@ def get_custom_css(theme=None):
             .user-bubble {{ background-color: #dcf8c6; color: #000000; }}
             .lumi-bubble {{ background-color: #f5f5f5; color: #000000; border: 1px solid #e6e6e6; }}
         }}
-        
-        /* Manual Override - Dark Mode */
-        {"""
-        .main { background-color: #121212 !important; color: #ffffff !important; }
-        .chat-title { color: #ffffff !important; }
-        .chat-container { background-color: #1e1e1e !important; }
-        .user-bubble { background-color: #00a884 !important; color: #ffffff !important; }
-        .lumi-bubble { background-color: #252525 !important; color: #ffffff !important; border: 1px solid #444 !important; }
-        """ if theme == "dark" else ""}
 
-        /* Manual Override - Light Mode */
-        {"""
-        .main { background-color: #f5f8fa !important; color: #000000 !important; }
-        .chat-title { color: #000000 !important; }
-        .chat-container { background-color: #ffffff !important; }
-        .user-bubble { background-color: #dcf8c6 !important; color: #000000 !important; }
-        .lumi-bubble { background-color: #f5f5f5 !important; color: #000000 !important; border: 1px solid #e6e6e6 !important; }
-        """ if theme == "light" else ""}
+        /* Manual Overrides */
+        {dark_mode_css if theme == "dark" else ""}
+        {light_mode_css if theme == "light" else ""}
     </style>
     """
 
