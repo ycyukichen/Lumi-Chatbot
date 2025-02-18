@@ -88,6 +88,9 @@ def get_custom_css(theme=None):
     </style>
     """
 
+# Initialize Theme Setting in Session State
+    st.session_state["theme"] = "light"
+
 # Apply CSS with system preference + manual override
 st.markdown(get_custom_css(st.session_state.theme), unsafe_allow_html=True)
 
@@ -102,10 +105,6 @@ with col2:
 # Check if logo exists
 logo_path = "Lumi.webp"
 logo_exists = os.path.isfile(logo_path)
-
-# Initialize Theme Setting in Session State
-if "theme" not in st.session_state:
-    st.session_state.theme = "light"  # Default to light mode
 
 # Initialize Chat History
 if "messages" not in st.session_state:
