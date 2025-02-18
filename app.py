@@ -265,6 +265,10 @@ def process_input():
         st.session_state.user_input = ""
 
         st.session_state.messages.append(("user", user_text, local_time))
+        
+        sentences = [s.strip() for s in re.split(r'[.!?]', user_text) if s.strip()]
+
+        responses = []
 
         # Convert lists to sets for faster lookup
         greetings = {
@@ -296,83 +300,88 @@ def process_input():
             "what do you think", "what would you say"
         }
 
-        # Check for greeting messages
-        if user_text in greetings:
-            response = random.choice([
-                "Hello! 😊 How are you feeling today?",
-                "Hey there! I'm Lumi. How's your day going?",
-                "Hi! 👋 What’s on your mind today?",
-                "Hey! I’m here for you. How can I support you?",
-                "Good to see you! How are you feeling?",
-                "Howdy! 😊 What's up?",
-                "Hey! Hope you're doing okay. Want to chat?",
-                "Yo! How’s everything going?",
-                "Greetings! Tell me how you’re feeling today.",
-                "What's up? 😊 I’m here to listen.",
-                "How do you do? Hope you’re having a good day!",
-                "How are you? I’m always here if you need to talk."
-            ])
+        for sentence in sentences:
+            # Check for greeting messages
+            if sentence in greetings:
+                response = random.choice([
+                    "Hello! 😊 How are you feeling today?",
+                    "Hey there! I'm Lumi. How's your day going?",
+                    "Hi! 👋 What’s on your mind today?",
+                    "Hey! I’m here for you. How can I support you?",
+                    "Good to see you! How are you feeling?",
+                    "Howdy! 😊 What's up?",
+                    "Hey! Hope you're doing okay. Want to chat?",
+                    "Yo! How’s everything going?",
+                    "Greetings! Tell me how you’re feeling today.",
+                    "What's up? 😊 I’m here to listen.",
+                    "How do you do? Hope you’re having a good day!",
+                    "How are you? I’m always here if you need to talk."
+                ])
 
-        # Check for "I'm good, and you?" type responses
-        elif user_text in user_feeling_questions:
-            response = random.choice([
-                "I'm just a bot, but I'm happy to chat with you! 😊",
-                "I'm here for you! 💙 Tell me more about your day.",
-                "I'm doing great because I'm talking to you!",
-                "I’m always here, ready to listen. How can I help today?",
-                "That’s wonderful! What’s been making you feel good?",
-                "That’s great to hear! What’s something positive that happened today?"
-            ])
+            # Check for "I'm good, and you?" type responses
+            elif sentence in user_feeling_questions:
+                response = random.choice([
+                    "I'm just a bot, but I'm happy to chat with you! 😊",
+                    "I'm here for you! 💙 Tell me more about your day.",
+                    "I'm doing great because I'm talking to you!",
+                    "I’m always here, ready to listen. How can I help today?",
+                    "That’s wonderful! What’s been making you feel good?",
+                    "That’s great to hear! What’s something positive that happened today?"
+                ])
 
-        # Handle positive mood responses
-        elif user_text in positive_responses:
-            response = random.choice([
-                "That's awesome! 😊 What's been making you feel good?",
-                "I'm so glad to hear that! 🎉 Want to share what made your day great?",
-                "That’s great! I love hearing positive things. 💙",
-                "Good vibes only! 🌟 Keep up the positivity.",
-                "Amazing! What's been making you smile today?",
-                "Glad to hear you're doing well! Anything exciting happening?"
-            ])
+            # Handle positive mood responses
+            elif sentence in positive_responses:
+                response = random.choice([
+                    "That's awesome! 😊 What's been making you feel good?",
+                    "I'm so glad to hear that! 🎉 Want to share what made your day great?",
+                    "That’s great! I love hearing positive things. 💙",
+                    "Good vibes only! 🌟 Keep up the positivity.",
+                    "Amazing! What's been making you smile today?",
+                    "Glad to hear you're doing well! Anything exciting happening?"
+                ])
 
-        # Handle casual prompts (e.g., "you tell", "your turn")
-        elif user_text in casual_prompts:
-            response = random.choice([
-                "Hmm, I’d say I’m feeling... well, as great as a bot can be! 😊",
-                "You know, I’m just here to make your day better! Tell me something fun.",
-                "Good question! If I had feelings, I’d say I’m feeling pretty happy to chat with you!",
-                "My turn? Well, I think you’re awesome! Now, tell me more about you. 😊",
-                "I’d say… I’m here, ready to listen! What’s on your mind?",
-                "I’d love to answer, but I’m more interested in hearing about you!"
-            ])
+            # Handle casual prompts (e.g., "you tell", "your turn")
+            elif sentence in casual_prompts:
+                response = random.choice([
+                    "Hmm, I’d say I’m feeling... well, as great as a bot can be! 😊",
+                    "You know, I’m just here to make your day better! Tell me something fun.",
+                    "Good question! If I had feelings, I’d say I’m feeling pretty happy to chat with you!",
+                    "My turn? Well, I think you’re awesome! Now, tell me more about you. 😊",
+                    "I’d say… I’m here, ready to listen! What’s on your mind?",
+                    "I’d love to answer, but I’m more interested in hearing about you!"
+                ])
 
-        # Check for farewell messages
-        elif user_text in farewells:
-            response = random.choice([
-                "Goodbye! 😊 Take care and reach out anytime you need me.",
-                "See you soon! I'm always here when you need me. 💙",
-                "Bye for now! Stay safe and take care. 🌸",
-                "Farewell! Hope to chat with you again soon. 😊",
-                "Take care! Remember, I'm always here for you. 💙",
-                "Talk to you later! Stay strong and be kind to yourself. 💕",
-                "So long! I’ll be here whenever you need a chat. 🌼"
-            ])
+            # Check for farewell messages
+            elif sentence in farewells:
+                response = random.choice([
+                    "Goodbye! 😊 Take care and reach out anytime you need me.",
+                    "See you soon! I'm always here when you need me. 💙",
+                    "Bye for now! Stay safe and take care. 🌸",
+                    "Farewell! Hope to chat with you again soon. 😊",
+                    "Take care! Remember, I'm always here for you. 💙",
+                    "Talk to you later! Stay strong and be kind to yourself. 💕",
+                    "So long! I’ll be here whenever you need a chat. 🌼"
+                ])
 
-        else:
-            response = get_emotion(user_text)  # Call API for other messages
+            else:
+                response = get_emotion(sentence)  # Call API for other messages
+            
+            responses.append(response)
+        
+        final_response = " ".join(responses)
 
         response_time = datetime.datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(local_tz)
-        st.session_state.messages.append(("assistant", response, response_time))
+        st.session_state.messages.append(("assistant", final_response, response_time))
 
         st.session_state.chat_history.append({
             "timestamp": current_utc_time.strftime("%Y-%m-%d %H:%M:%S"),
             "user_input": user_text,
-            "lumi_response": response
+            "lumi_response": final_response
         })
 
         # Save messages to MongoDB
         save_message_to_mongo("user", user_text)
-        save_message_to_mongo("assistant", response)
+        save_message_to_mongo("assistant", final_response)
 
 # User Input
 st.markdown('<div class="chat-input-container">', unsafe_allow_html=True)
@@ -386,3 +395,4 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 if not st.session_state.user_input:
     st.session_state.submitted = False
+    
