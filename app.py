@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from functools import lru_cache
 import random
 import re
-from contractions import fix  
+import contractions
 
 # API URL
 API_URL = "https://Yuki-Chen-emochatbot.hf.space/dialogflow"
