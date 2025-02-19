@@ -83,10 +83,6 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
-    
-# Ensure Lumi's greeting is only added once
-if not any(msg[1] == "Hi there! I'm Lumi. How are you feeling today?" for msg in st.session_state.messages):
-    st.session_state.messages.append(("assistant", "Hi there! I'm Lumi. How are you feeling today?", datetime.datetime.now(pytz.utc)))
 
 # Get User Timezone
 @st.cache_data
