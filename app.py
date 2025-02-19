@@ -219,6 +219,7 @@ def process_input():
     if st.session_state.user_input:
         user_text = st.session_state.user_input.strip()
         st.session_state.user_input = ""
+        st.session_state.submitted = True
 
         # Get current local time
         local_time = datetime.datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(local_tz)
