@@ -112,7 +112,11 @@ logo_exists = os.path.isfile(logo_path)
 if not st.session_state.messages:
     greeting = "Hi there! I'm Lumi. How are you feeling today?"
     st.session_state.messages.append(("assistant", greeting, datetime.datetime.now(pytz.utc)))
-
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+if "submitted" not in st.session_state:
+    st.session_state.submitted = False
+    
 # Save Message to MongoDB
 def save_message(role, text):
     if collection:
