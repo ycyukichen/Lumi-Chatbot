@@ -130,7 +130,6 @@ def save_message(role, text):
             st.error(f"Database error: {e}")
 
 # Optimize API calls with caching and error handling
-@lru_cache(maxsize=100)
 def get_emotion(text):
     try:
         response = requests.post(API_URL, json={"queryResult": {"queryText": text}, "session": "test_session_123"}, timeout=15)
@@ -157,9 +156,6 @@ if not st.session_state.messages:
         "lumi_response": greeting
     })
 
-# Clean User Input
-def clean_text(text):
-    return contractions.fix(re.sub(r"[^\w\s]", "", text)).lower().strip()
 # Display Chat History
 for role, text, timestamp in st.session_state.messages:
     local_time = timestamp.astimezone(local_tz)  
@@ -208,145 +204,96 @@ def clean_text(text):
     text = re.sub(r"[^\w\s]", "", text)  # Remove punctuation ("how are you?" → "how are you")
     return text.lower().strip()  # Convert to lowercase
 
+# **Define Local Greetings, Farewells, and Fallback Responses**
+greetings = {
+    "hello", "hi", "hey", "good morning", "good afternoon", "good evening",
+    "what’s up", "howdy", "hiya", "yo", "greetings", "sup", "morning",
+    "evening", "good day", "how do you do", "how are you", "how are you doing",
+    "how is everything", "how is it going", "how have you been", "what is new"
+}
+
+farewells = {
+    "bye", "goodbye", "see you", "take care", "later", "farewell",
+    "see you soon", "talk to you later", "peace", "so long"
+}
+
+fallback_responses = [
+    "I'm here to listen! Could you tell me more about how you're feeling? 💙",
+    "I'd love to understand better. Could you share more about what's on your mind? 💭",
+    "I'm all ears. Would you like to elaborate a bit more? 💙",
+    "I'm here for you. Would you like to share what's happening? 🤗",
+    "I'm interested in hearing more. What's been going on? 💙"
+]
+
+# **Process User Input**
 def process_input():
-    if st.session_state.user_input and not st.session_state.submitted:
+    if st.session_state.user_input:
         user_text = st.session_state.user_input.strip()
-        user_timezone = get_user_timezone()  # Get user's timezone
-        local_tz = pytz.timezone(user_timezone)
-
-        # Get current UTC time and convert to user's local time
-        current_utc_time = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
-        local_time = current_utc_time.astimezone(local_tz)
-
-        st.session_state.submitted = True
         st.session_state.user_input = ""
 
+        # Get current local time
+        local_time = datetime.datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(local_tz)
+
+        # Add user message to chat history
         st.session_state.messages.append(("user", user_text, local_time))
+
+        # **Handle Greetings Locally**
+        if user_text.lower() in greetings:
+            response = random.choice([
+                "Hello! 😊 How are you feeling today?",
+                "Hey there! I'm Lumi. How's your day going?",
+                "Hi! 👋 What’s on your mind today?",
+                "Hey! I’m here for you. How can I support you?",
+                "Good to see you! How are you feeling?"
+            ])
         
-        sentences = [s.strip() for s in re.split(r'[.!?]', user_text) if s.strip()]
+        # **Handle Farewells Locally**
+        elif user_text.lower() in farewells:
+            response = random.choice([
+                "Goodbye! 😊 Take care and reach out anytime you need me.",
+                "See you soon! I'm always here when you need me. 💙",
+                "Bye for now! Stay safe and take care. 🌸",
+                "Farewell! Hope to chat with you again soon. 😊",
+                "Take care! Remember, I'm always here for you. 💙"
+            ])
 
-        responses = []
+        # **Handle Fallbacks Locally (Short or Unclear Inputs)**
+        elif len(user_text.split()) < 3:
+            response = random.choice(fallback_responses)
 
-        # Convert lists to sets for faster lookup
-        greetings = {
-            "hello", "hi", "hey", "good morning", "good afternoon", "good evening",
-            "what is up", "howdy", "hiya", "yo", "greetings", "sup", "morning",
-            "evening", "good day", "how do you do", "how are you", "how are you doing",
-            "how is everything", "how is it going", "how have you been", "what is new",
-            "hi how do you do", "hi how are you", "hi how are you doing",
-            "hi how is everything", "hi how is it going", "hi how have you been", "hi, what is new",
-        }
+        # **Call API for Emotion-Based Responses**
+        else:
+            response = get_emotion(user_text)
 
-        user_feeling_questions = {
-            "i am good and you", "i am fine and you", "i am okay and you",
-            "i am doing well and you", "i am alright and you", "i am great and you",
-            "i am not bad and you"
-        }
-
-        positive_responses = {
-            "i am good", "i am fine", "i am okay", "i am doing well", "i am great",
-            "i am fantastic", "i am amazing", "i am wonderful", "i am happy",
-            "feeling good", "feeling great", "i am feeling well"
-        }
-
-        farewells = {
-            "bye", "goodbye", "see you", "take care", "later", "farewell",
-            "see you soon", "talk to you later", "peace", "so long"
-        }
-
-        casual_prompts = {
-            "what about you", "you tell", "tell me", "your turn", "you go",
-            "what do you think", "what would you say"
-        }
-
-        for sentence in sentences:
-            # Check for greeting messages
-            if sentence in greetings:
-                response = random.choice([
-                    "Hello! 😊 How are you feeling today?",
-                    "Hey there! I'm Lumi. How's your day going?",
-                    "Hi! 👋 What’s on your mind today?",
-                    "Hey! I’m here for you. How can I support you?",
-                    "Good to see you! How are you feeling?",
-                    "Howdy! 😊 What's up?",
-                    "Hey! Hope you're doing okay. Want to chat?",
-                    "Yo! How’s everything going?",
-                    "Greetings! Tell me how you’re feeling today.",
-                    "What's up? 😊 I’m here to listen.",
-                    "How do you do? Hope you’re having a good day!",
-                    "How are you? I’m always here if you need to talk."
-                ])
-
-            # Check for "I'm good, and you?" type responses
-            elif sentence in user_feeling_questions:
-                response = random.choice([
-                    "I'm just a bot, but I'm happy to chat with you! 😊",
-                    "I'm here for you! 💙 Tell me more about your day.",
-                    "I'm doing great because I'm talking to you!",
-                    "I’m always here, ready to listen. How can I help today?",
-                    "That’s wonderful! What’s been making you feel good?",
-                    "That’s great to hear! What’s something positive that happened today?"
-                ])
-
-            # Handle positive mood responses
-            elif sentence in positive_responses:
-                response = random.choice([
-                    "That's awesome! 😊 What's been making you feel good?",
-                    "I'm so glad to hear that! 🎉 Want to share what made your day great?",
-                    "That’s great! I love hearing positive things. 💙",
-                    "Good vibes only! 🌟 Keep up the positivity.",
-                    "Amazing! What's been making you smile today?",
-                    "Glad to hear you're doing well! Anything exciting happening?"
-                ])
-
-            # Handle casual prompts (e.g., "you tell", "your turn")
-            elif sentence in casual_prompts:
-                response = random.choice([
-                    "Hmm, I’d say I’m feeling... well, as great as a bot can be! 😊",
-                    "You know, I’m just here to make your day better! Tell me something fun.",
-                    "Good question! If I had feelings, I’d say I’m feeling pretty happy to chat with you!",
-                    "My turn? Well, I think you’re awesome! Now, tell me more about you. 😊",
-                    "I’d say… I’m here, ready to listen! What’s on your mind?",
-                    "I’d love to answer, but I’m more interested in hearing about you!"
-                ])
-
-            # Check for farewell messages
-            elif sentence in farewells:
-                response = random.choice([
-                    "Goodbye! 😊 Take care and reach out anytime you need me.",
-                    "See you soon! I'm always here when you need me. 💙",
-                    "Bye for now! Stay safe and take care. 🌸",
-                    "Farewell! Hope to chat with you again soon. 😊",
-                    "Take care! Remember, I'm always here for you. 💙",
-                    "Talk to you later! Stay strong and be kind to yourself. 💕",
-                    "So long! I’ll be here whenever you need a chat. 🌼"
-                ])
-
-            else:
-                response = get_emotion(user_text)  # Call API for other messages
-            
-            responses.append(response)
-        
-        final_response = " ".join(responses)
-
+        # Save assistant's response
         response_time = datetime.datetime.utcnow().replace(tzinfo=pytz.utc).astimezone(local_tz)
-        st.session_state.messages.append(("assistant", final_response, response_time))
-
-        st.session_state.chat_history.append({
-            "timestamp": current_utc_time.strftime("%Y-%m-%d %H:%M:%S"),
-            "user_input": user_text,
-            "lumi_response": final_response
-        })
+        st.session_state.messages.append(("assistant", response, response_time))
 
         # Save messages to MongoDB
         save_message("user", user_text)
-        save_message("assistant", final_response)
+        save_message("assistant", response)
 
-# User Input
-st.markdown('<div class="chat-input-container">', unsafe_allow_html=True)
+# **Display Chat History**
+for role, text, timestamp in st.session_state.messages:
+    local_time = timestamp.astimezone(local_tz)  
+    formatted_time = local_time.strftime("%H:%M")  
+
+    if role == "user":
+        st.markdown(f'''
+        <div style="text-align: right; background-color: #dcf8c6; padding: 10px; border-radius: 10px; margin: 5px 0;">
+            {text} <br><span style="font-size: 0.7em; color: #888;">{formatted_time}</span>
+        </div>
+        ''', unsafe_allow_html=True)
+    else:
+        st.markdown(f'''
+        <div style="text-align: left; background-color: #f5f5f5; padding: 10px; border-radius: 10px; margin: 5px 0;">
+            {text} <br><span style="font-size: 0.7em; color: #888;">{formatted_time}</span>
+        </div>
+        ''', unsafe_allow_html=True)
+
+# **User Input Field**
 st.text_input(
-    "",
-    placeholder="Tell Lumi how you're feeling today...",
+    "Tell Lumi how you're feeling today...",
     key="user_input",
     on_change=process_input
 )
