@@ -145,17 +145,6 @@ def get_emotion(text):
 # Chat container with white background
 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
-# Add first message if chat is empty
-if not st.session_state.messages:
-    greeting_time = datetime.datetime.now()
-    greeting = "Hi there! I'm Lumi. How are you feeling today?"
-    st.session_state.messages.append(("assistant", greeting, greeting_time))
-    st.session_state.chat_history.append({
-        "timestamp": greeting_time.strftime("%Y-%m-%d %H:%M:%S"),
-        "user_input": "",
-        "lumi_response": greeting
-    })
-
 # Display Chat History
 for role, text, timestamp in st.session_state.messages:
     local_time = timestamp.astimezone(local_tz)  
