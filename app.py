@@ -263,24 +263,6 @@ def process_input():
         save_message("user", user_text)
         save_message("assistant", response)
 
-# **Display Chat History**
-for role, text, timestamp in st.session_state.messages:
-    local_time = timestamp.astimezone(local_tz)  
-    formatted_time = local_time.strftime("%H:%M")  
-
-    if role == "user":
-        st.markdown(f'''
-        <div style="text-align: right; background-color: #dcf8c6; padding: 10px; border-radius: 10px; margin: 5px 0;">
-            {text} <br><span style="font-size: 0.7em; color: #888;">{formatted_time}</span>
-        </div>
-        ''', unsafe_allow_html=True)
-    else:
-        st.markdown(f'''
-        <div style="text-align: left; background-color: #f5f5f5; padding: 10px; border-radius: 10px; margin: 5px 0;">
-            {text} <br><span style="font-size: 0.7em; color: #888;">{formatted_time}</span>
-        </div>
-        ''', unsafe_allow_html=True)
-
 # **User Input Field**
 st.text_input(
     "Tell Lumi how you're feeling today...",
