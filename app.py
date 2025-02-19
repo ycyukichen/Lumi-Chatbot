@@ -24,156 +24,120 @@ MONGO_URI = os.getenv("MONGO_URI")
 DB_NAME = "lumi_chatbot"
 COLLECTION_NAME = "chat_history"
 
-# MongoDB connection
-try:
-    if MONGO_URI:
-        client = pymongo.MongoClient(MONGO_URI, maxPoolSize=50)
-        db = client[DB_NAME]
-        collection = db[COLLECTION_NAME]
-    else:
-        client, db, collection = None, None, None
-except Exception as e:
-    st.error(f"MongoDB connection error: {str(e)}")
-    client, db, collection = None, None, None
+# MongoDB Connection
+def get_mongo_collection():
+    try:
+        if MONGO_URI:
+            client = pymongo.MongoClient(MONGO_URI, maxPoolSize=50)
+            db = client[DB_NAME]
+            return db[COLLECTION_NAME]
+    except Exception as e:
+        st.error(f"MongoDB connection error: {str(e)}")
+    return None
 
+collection = get_mongo_collection()
 
+# Encode image to Base64
+@st.cache_data
 def get_image_base64(image_path):
-    """Encodes an image file to Base64 format for embedding in HTML."""
     try:
         with open(image_path, "rb") as img_file:
-            base64_str = base64.b64encode(img_file.read()).decode("utf-8")
-        return base64_str
+            return base64.b64encode(img_file.read()).decode("utf-8")
     except FileNotFoundError:
-        st.error(f"Error: Image file '{image_path}' not found.")
         return ""
-    
+
 # Streamlit UI Configuration
-st.set_page_config(
-    page_title="Lumi - I'm here for you", 
-    layout="centered",
-    initial_sidebar_state="collapsed"
-)
+st.set_page_config(page_title="Lumi - I'm here for you", layout="centered", initial_sidebar_state="collapsed")
 
-# Cache image loading to optimize performance
-@st.cache_data
-def get_custom_css(theme=None):
-    """Returns CSS that adapts to system dark mode settings and manual selection."""
-    dark_mode_css = """
-    .main { background-color: #121212 !important; color: #ffffff !important; }
-    .chat-title { color: #ffffff !important; }
-    .chat-container { background-color: #1e1e1e !important; }
-    .user-bubble { background-color: #00a884 !important; color: #ffffff !important; }
-    .lumi-bubble { background-color: #252525 !important; color: #ffffff !important; border: 1px solid #444 !important; }
-    """
-
-    light_mode_css = """
-    .main { background-color: #f5f8fa !important; color: #000000 !important; }
-    .chat-title { color: #000000 !important; }
-    .chat-container { background-color: #ffffff !important; }
-    .user-bubble { background-color: #dcf8c6 !important; color: #000000 !important; }
-    .lumi-bubble { background-color: #f5f5f5 !important; color: #000000 !important; border: 1px solid #e6e6e6 !important; }
-    """
-
-    return f"""
-    <style>
-        /* System Dark Mode Detection (Default) */
-        @media (prefers-color-scheme: dark) {{
-            .main {{ background-color: #121212; color: #ffffff; }}
-            .chat-title {{ color: #ffffff; }}
-            .chat-container {{ background-color: #1e1e1e; }}
-            .user-bubble {{ background-color: #00a884; color: #ffffff; }}
-            .lumi-bubble {{ background-color: #252525; color: #ffffff; border: 1px solid #444; }}
-        }}
-        
-        @media (prefers-color-scheme: light) {{
-            .main {{ background-color: #f5f8fa; color: #000000; }}
-            .chat-title {{ color: #000000; }}
-            .chat-container {{ background-color: #ffffff; }}
-            .user-bubble {{ background-color: #dcf8c6; color: #000000; }}
-            .lumi-bubble {{ background-color: #f5f5f5; color: #000000; border: 1px solid #e6e6e6; }}
-        }}
-
-        /* Manual Overrides */
-        {dark_mode_css if theme == "dark" else ""}
-        {light_mode_css if theme == "light" else ""}
-    </style>
-    """
-
-# Initialize Theme Setting in Session State
+# Theme Settings
 if "theme" not in st.session_state:
     st.session_state["theme"] = "light"
 
-# Apply CSS with system preference + manual override
+@st.cache_data
+def get_custom_css(theme=None):
+    css = {
+        "dark": """
+        .main { background-color: #121212 !important; color: #ffffff !important; }
+        .chat-container { background-color: #1e1e1e !important; }
+        .user-bubble { background-color: #00a884 !important; color: #ffffff !important; }
+        .lumi-bubble { background-color: #252525 !important; color: #ffffff !important; }
+        """,
+        "light": """
+        .main { background-color: #f5f8fa !important; color: #000000 !important; }
+        .chat-container { background-color: #ffffff !important; }
+        .user-bubble { background-color: #dcf8c6 !important; color: #000000 !important; }
+        .lumi-bubble { background-color: #f5f5f5 !important; color: #000000 !important; }
+        """
+    }
+    return f"<style>{css.get(theme, css['light'])}</style>"
+
 st.markdown(get_custom_css(st.session_state.theme), unsafe_allow_html=True)
 
-# Theme Toggle Button for Manual Override
-col1, col2 = st.columns([0.8, 0.2])
-with col2:
-    if st.button("🌙 Dark Mode" if st.session_state.theme != "dark" else "☀️ Light Mode"):
-        # Toggle between light and dark mode manually
-        st.session_state.theme = "dark" if st.session_state.theme != "dark" else "light"
-        st.rerun()
+# Dark/Light Mode Toggle
+if st.button("🌙 Dark Mode" if st.session_state.theme != "dark" else "☀️ Light Mode"):
+    st.session_state.theme = "dark" if st.session_state.theme != "dark" else "light"
+    st.rerun()
+
+# Load Chat History
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "submitted" not in st.session_state:
+    st.session_state.submitted = False
+
+# Get User Timezone
+@st.cache_data
+def get_user_timezone():
+    try:
+        data = requests.get("https://ipinfo.io/json", timeout=5).json()
+        return data.get("timezone", "UTC")
+    except Exception:
+        return "UTC"
+
+user_timezone = get_user_timezone()
+local_tz = pytz.timezone(user_timezone)
+
+# Display Title & Description
+st.markdown("""
+    <div style="text-align: center;">
+        <h1 style='font-size: 24px;'>Lumi</h1>
+        <p>💬 You are not alone. Lumi is here to listen and support you.</p>
+    </div>
+""", unsafe_allow_html=True)
         
 # Check if logo exists
 logo_path = "Lumi.webp"
 logo_exists = os.path.isfile(logo_path)
 
-# Initialize Chat History
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-if "submitted" not in st.session_state:
-    st.session_state.submitted = False
-    
-# Optimize database operations with error handling
-def save_message_to_mongo(role, text):
-    if collection is not None:  # Changed from 'if collection:'
+# Initialize Chat
+if not st.session_state.messages:
+    greeting = "Hi there! I'm Lumi. How are you feeling today?"
+    st.session_state.messages.append(("assistant", greeting, datetime.datetime.now(pytz.utc)))
+
+# Save Message to MongoDB
+def save_message(role, text):
+    if collection:
         try:
-            message = {
+            collection.insert_one({
                 "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "role": role,
                 "text": text
-            }
-            collection.insert_one(message)
+            })
         except Exception as e:
-            st.error(f"Failed to save message: {str(e)}")
+            st.error(f"Database error: {e}")
 
 # Optimize API calls with caching and error handling
 @lru_cache(maxsize=100)
 def get_emotion(text):
     try:
-        payload = {"queryResult": {"queryText": text}, "session": "test_session_123"}
-        response = requests.post(API_URL, json=payload, timeout=15)
-             
+        response = requests.post(API_URL, json={"queryResult": {"queryText": text}, "session": "test_session_123"}, timeout=15)
         if response.status_code == 200:
-            response_data = response.json()
-            return response_data.get("fulfillmentText", "Lumi is here for you. Take your time.")
-        else:
-            st.error(f"API Error: {response.status_code} - {response.text}")
-            return "I'm having trouble connecting, but I'm still here for you."
-    
-    except requests.exceptions.ReadTimeout:
-        return "Lumi is taking a little longer to respond. Please try again."
-
-    except requests.exceptions.ConnectionError:
-        return "I'm unable to connect to my system right now, but I'm here for you."
-
+            return response.json().get("fulfillmentText", "Lumi is here for you. Take your time.")
     except requests.exceptions.RequestException:
-        fallback_responses = [
+        return random.choice([
+            "I'm having trouble connecting, but I'm still here for you.",
             "It seems Lumi is having some trouble responding right now.",
-            "I'm still here for you, even if I can't reply at the moment.",
             "Let's try again in a bit. I'm always here to listen."
-        ]
-        return random.choice(fallback_responses)
-
-# Display title and description above chat box
-st.markdown("""
-    <div class="chat-title" style="text-align: center;">
-        <h1 style='font-size: 24px; margin-bottom: 5px;'>Lumi</h1>
-        <p style='font-size: 14px; margin-top: 0;'>💬 You are not alone. Lumi is here to listen and support you.</p>
-    </div>
-""", unsafe_allow_html=True)
+        ])
 
 # Chat container with white background
 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
@@ -189,20 +153,9 @@ if not st.session_state.messages:
         "lumi_response": greeting
     })
 
-# Get user timezone
-def get_user_timezone():
-    """Detect user timezone based on IP address using ipinfo.io"""
-    try:
-        response = requests.get("https://ipinfo.io/json", timeout=5)  # Get user location via IP
-        data = response.json()
-        return data.get("timezone", "UTC")  # Default to UTC if not found
-    except Exception:
-        return "UTC"  # Fallback to UTC if API fails
-
-# Convert stored UTC timestamps to user’s timezone
-user_timezone = get_user_timezone()
-local_tz = pytz.timezone(user_timezone)
-
+# Clean User Input
+def clean_text(text):
+    return contractions.fix(re.sub(r"[^\w\s]", "", text)).lower().strip()
 # Display Chat History
 for role, text, timestamp in st.session_state.messages:
     local_time = timestamp.astimezone(local_tz)  
@@ -253,7 +206,7 @@ def clean_text(text):
 
 def process_input():
     if st.session_state.user_input and not st.session_state.submitted:
-        user_text = clean_text(st.session_state.user_input).lower().strip()
+        user_text = st.session_state.user_input.strip()
         user_timezone = get_user_timezone()  # Get user's timezone
         local_tz = pytz.timezone(user_timezone)
 
@@ -366,7 +319,7 @@ def process_input():
                 ])
 
             else:
-                response = get_emotion(sentence)  # Call API for other messages
+                response = get_emotion(user_text)  # Call API for other messages
             
             responses.append(response)
         
@@ -382,8 +335,8 @@ def process_input():
         })
 
         # Save messages to MongoDB
-        save_message_to_mongo("user", user_text)
-        save_message_to_mongo("assistant", final_response)
+        save_message("user", user_text)
+        save_message("assistant", final_response)
 
 # User Input
 st.markdown('<div class="chat-input-container">', unsafe_allow_html=True)
