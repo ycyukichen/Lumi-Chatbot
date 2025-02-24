@@ -1,0 +1,14 @@
+# Ignore environment variables
+.env
+config.env
+secrets.env
+
+# Ignore Python cache and logs
+__pycache__/
+*.pyc
+*.pyo
+*.log
+
+# Ignore database dumps or local MongoDB files
+dump.rdb
+*.sqlite3
